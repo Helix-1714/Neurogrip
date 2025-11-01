@@ -58,7 +58,6 @@
           document.getElementById("status").textContent =
             `Thumb: ${thumbOpen ? "Open" : "Closed"} | Joint2: ${joint2Open ? "Open" : "Closed"} | Joint3: ${joint3Open ? "Open" : "Closed"}`;
 
-          // Send only if changed
           if (writer) {
             if (thumbOpen !== (lastSent.thumb === "open")) {
               writer.write(new TextEncoder().encode(`thumb_${thumbOpen ? "open" : "close"}\n`));
@@ -74,7 +73,7 @@
             }
           }
         }
-      }, 200); // every 200 ms
+      }, 200); 
     }
 
     document.getElementById('connectBtn').onclick = async () => {
