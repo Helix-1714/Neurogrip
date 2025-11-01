@@ -1,72 +1,64 @@
 #include <Servo.h>
 
-Servo thumb;
-Servo indexMiddle;
-Servo ringLittle;
+Servo thumbServo;
+Servo joint2Servo;
+Servo joint3Servo;
+
+String command = "";
 
 void setup() {
-  thumb.attach(3);         // Pin D3 for thumb
-  indexMiddle.attach(5);   // Pin D5 for index+middle
-  ringLittle.attach(6);    // Pin D6 for ring+little
+  Serial.begin(9600);
 
-  // Start with fingers open
-  thumb.write(0);
-  indexMiddle.write(0);
-  ringLittle.write(0);
+  thumbServo.attach(3);   // Pin for thumb servo
+  joint2Servo.attach(6);  // Pin for joint2 servo
+  joint3Servo.attach(5);  // Pin for joint3 servo
+
+  // Initialize to closed position
+  thumbServo.write(0);
+  joint2Servo.write(0);
+  joint3Servo.write(0);
+
+  Serial.println("Arduino Ready");
 }
 
 void loop() {
-  // Smoothly close fingers
-  for (int pos = 0; pos <= 90; pos++) {
-    thumb.write(pos);
-    indexMiddle.write(pos);
-    ringLittle.write(pos);
-    delay(10); // adjust speed
+  // Read serial commands from browser
+  while (Serial.available() > 0) {
+    char c = Serial.read();
+    if (c == '\n') {
+      processCommand(command);
+      command = "";
+    } else {
+      command += c;
+    }
+  }
+}
+
+void processCommand(String cmd) {
+  cmd.trim();  // Remove spaces/newlines
+
+  if (cmd == "thumb_open") {
+    thumbServo.write(180);  // Adjust angles as needed
+    Serial.println("Thumb opened");
+  } else if (cmd == "thumb_close") {
+    thumbServo.write(0);
+    Serial.println("Thumb closed");
   }
 
-  delay(300); // pause when fully closed
-
-  // Smoothly open fingers
-  for (int pos = 90; pos >= 0; pos--) {
-    thumb.write(pos);
-    indexMiddle.write(pos);
-    ringLittle.write(pos);
-    delay(10);
+  else if (cmd == "joint2_open") {
+    joint2Servo.write(180);
+    Serial.println("Joint2 opened");
+  } else if (cmd == "joint2_close") {
+    joint2Servo.write(0);
+    Serial.println("Joint2 closed");
   }
 
-  delay(500); // pause when fully open
-   for (int pos = 0; pos <= 90; pos++) {
-    thumb.write(pos);
-    delay(10);
-  }
-  delay(300);
-  for (int pos = 90; pos >= 0; pos--) {
-    thumb.write(pos);
-    delay(10);
-  }
-  delay(300);
-
-  // ---- Joint 2: Index + Middle ----
-  for (int pos = 0; pos <= 90; pos++) {
-    indexMiddle.write(pos);
-    delay(10);
-  }
-  delay(300);
-  for (int pos = 90; pos >= 0; pos--) {
-    indexMiddle.write(pos);
-    delay(10);
-  }
-  delay(300);
-
-  // ---- Joint 3: Ring + Little ----
-  for (int pos = 0; pos <= 90; pos++) {
-    ringLittle.write(pos);
-    delay(10);
-  }
-  delay(300);
-  for (int pos = 90; pos >= 0; pos--) {
-    ringLittle.write(pos);
-    delay(10);
+  else if (cmd == "joint3_open") {
+    joint3Servo.write(180);
+    Serial.println("Joint3 opened");
+  } else if (cmd == "joint3_close") {
+    joint3Servo.write(0);
+    Serial.println("Joint3 closed");
   }
   delay(300);
 }
