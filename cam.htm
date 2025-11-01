@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gesture Controlled Robotic Hand</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+  <style>
+    body { text-align: center; background: #111; color: #0f0; font-family: monospace; }
+    video { transform: scaleX(-1); width: 480px; height: 360px; margin-top: 10px; border: 2px solid #0f0; }
+    button { margin: 10px; padding: 10px 20px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h2>Gesture Controlled Robotic Hand 🤖✋ (Left Hand)</h2>
+  <button id="connectBtn">🔌 Connect to Arduino</button>
+  <video id="video" autoplay></video>
+  <p id="status">Initializing...</p>
+
+  <script>
+    let detector, model, serialPort, writer;
+    let lastSent = { thumb: "", joint2: "", joint3: "" };
+
+    async function initCamera() {
+      const video = document.getElementById('video');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      await new Promise(r => video.onloadedmetadata = r);
+      return video;
+    }
+
+    function isFingerOpen(landmarks, tip, pip) {
+      return landmarks[tip].y < landmarks[pip].y;
+    }
+
+    async function detectHands(video) {
+      model = handPoseDetection.SupportedModels.MediaPipeHands;
+      detector = await handPoseDetection.createDetector(model, {
+        runtime: 'mediapipe',
+        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands'
+      });
+
+      setInterval(async () => {
+        const hands = await detector.estimateHands(video, { flipHorizontal: true });
+        if (hands.length > 0) {
+          const landmarks = hands[0].keypoints;
+          const thumbOpen = isFingerOpen(landmarks, 4, 3);
+          const indexOpen = isFingerOpen(landmarks, 8, 6);
+          const middleOpen = isFingerOpen(landmarks, 12, 10);
+          const ringOpen = isFingerOpen(landmarks, 16, 14);
+          const littleOpen = isFingerOpen(landmarks, 20, 18);
+
+          const joint2Open = ringOpen || littleOpen;
+          const joint3Open =indexOpen || middleOpen;
+
+          document.getElementById("status").textContent =
+            `Thumb: ${thumbOpen ? "Open" : "Closed"} | Joint2: ${joint2Open ? "Open" : "Closed"} | Joint3: ${joint3Open ? "Open" : "Closed"}`;
+
+          // Send only if changed
+          if (writer) {
+            if (thumbOpen !== (lastSent.thumb === "open")) {
+              writer.write(new TextEncoder().encode(`thumb_${thumbOpen ? "open" : "close"}\n`));
+              lastSent.thumb = thumbOpen ? "open" : "close";
+            }
+            if (joint2Open !== (lastSent.joint2 === "open")) {
+              writer.write(new TextEncoder().encode(`joint2_${joint2Open ? "open" : "close"}\n`));
+              lastSent.joint2 = joint2Open ? "open" : "close";
+            }
+            if (joint3Open !== (lastSent.joint3 === "open")) {
+              writer.write(new TextEncoder().encode(`joint3_${joint3Open ? "open" : "close"}\n`));
+              lastSent.joint3 = joint3Open ? "open" : "close";
+            }
+          }
+        }
+      }, 200); // every 200 ms
+    }
+
+    document.getElementById('connectBtn').onclick = async () => {
+      try {
+        serialPort = await navigator.serial.requestPort();
+        await serialPort.open({ baudRate: 9600 });
+        writer = serialPort.writable.getWriter();
+        document.getElementById("status").textContent = "Connected to Arduino ✅";
+      } catch (err) {
+        alert("Serial connection failed: " + err);
+      }
+    };
+
+    (async () => {
+      const video = await initCamera();
+      detectHands(video);
+      document.getElementById("status").textContent = "Camera ready. Detecting gestures...";
+    })();
+  </script>
+</body>
+</html>

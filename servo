@@ -1,0 +1,72 @@
+#include <Servo.h>
+
+Servo thumb;
+Servo indexMiddle;
+Servo ringLittle;
+
+void setup() {
+  thumb.attach(3);         // Pin D3 for thumb
+  indexMiddle.attach(5);   // Pin D5 for index+middle
+  ringLittle.attach(6);    // Pin D6 for ring+little
+
+  // Start with fingers open
+  thumb.write(0);
+  indexMiddle.write(0);
+  ringLittle.write(0);
+}
+
+void loop() {
+  // Smoothly close fingers
+  for (int pos = 0; pos <= 90; pos++) {
+    thumb.write(pos);
+    indexMiddle.write(pos);
+    ringLittle.write(pos);
+    delay(10); // adjust speed
+  }
+
+  delay(300); // pause when fully closed
+
+  // Smoothly open fingers
+  for (int pos = 90; pos >= 0; pos--) {
+    thumb.write(pos);
+    indexMiddle.write(pos);
+    ringLittle.write(pos);
+    delay(10);
+  }
+
+  delay(500); // pause when fully open
+   for (int pos = 0; pos <= 90; pos++) {
+    thumb.write(pos);
+    delay(10);
+  }
+  delay(300);
+  for (int pos = 90; pos >= 0; pos--) {
+    thumb.write(pos);
+    delay(10);
+  }
+  delay(300);
+
+  // ---- Joint 2: Index + Middle ----
+  for (int pos = 0; pos <= 90; pos++) {
+    indexMiddle.write(pos);
+    delay(10);
+  }
+  delay(300);
+  for (int pos = 90; pos >= 0; pos--) {
+    indexMiddle.write(pos);
+    delay(10);
+  }
+  delay(300);
+
+  // ---- Joint 3: Ring + Little ----
+  for (int pos = 0; pos <= 90; pos++) {
+    ringLittle.write(pos);
+    delay(10);
+  }
+  delay(300);
+  for (int pos = 90; pos >= 0; pos--) {
+    ringLittle.write(pos);
+    delay(10);
+  }
+  delay(300);
+}
