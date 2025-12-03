@@ -1,64 +1,47 @@
 #include <Servo.h>
 
-Servo thumbServo;
-Servo joint2Servo;
-Servo joint3Servo;
+// Define servos
+Servo servo1, servo2, servo3, servo4, servo5;
 
-String command = "";
+// Flex sensor pins
+const int flexPins[5] = {A0, A1, A2, A3, A4};
+
+// EMG sensor pin
+const int emgPin = A5;
+
+// Servo pins
+const int servoPins[5] = {3, 5, 6, 9, 10};
+
+// Flex sensor values
+int flexValues[5];
+
+// EMG threshold
+const int emgThreshold = 500;
 
 void setup() {
-  Serial.begin(9600);
-
-  thumbServo.attach(3);   // Pin for thumb servo
-  joint2Servo.attach(6);  // Pin for joint2 servo
-  joint3Servo.attach(5);  // Pin for joint3 servo
-
-  // Initialize to closed position
-  thumbServo.write(0);
-  joint2Servo.write(0);
-  joint3Servo.write(0);
-
-  Serial.println("Arduino Ready");
+  // Attach servos
+  for (int i = 0; i < 5; i++) {
+    // Attach each servo to its corresponding pin
+    if (i == 0) servo1.attach(servoPins[i]);
+    if (i == 1) servo2.attach(servoPins[i]);
+    if (i == 2) servo3.attach(servoPins[i]);
+    if (i == 3) servo4.attach(servoPins[i]);
+    if (i == 4) servo5.attach(servoPins[i]);
+  }
+  pinMode(emgPin, INPUT);
 }
 
 void loop() {
-  // Read serial commands from browser
-  while (Serial.available() > 0) {
-    char c = Serial.read();
-    if (c == '\n') {
-      processCommand(command);
-      command = "";
-    } else {
-      command += c;
-    }
-  }
-}
+  // Read flex sensors
+  for (int i = 0; i < 5; i++) {
+    flexValues[i] = analogRead(flexPins[i]);
+    int servoPos = map(flexValues[i], 0, 1023, 0, 180);
 
-void processCommand(String cmd) {
-  cmd.trim();  // Remove spaces/newlines
-
-  if (cmd == "thumb_open") {
-    thumbServo.write(180);  // Adjust angles as needed
-    Serial.println("Thumb opened");
-  } else if (cmd == "thumb_close") {
-    thumbServo.write(0);
-    Serial.println("Thumb closed");
+    // Write to the corresponding servo
+    if (i == 0) servo1.write(servoPos);
+    if (i == 1) servo2.write(servoPos);
+    if (i == 2) servo3.write(servoPos);
+    if (i == 3) servo4.write(servoPos);
+    if (i == 4) servo5.write(servoPos);
   }
-
-  else if (cmd == "joint2_open") {
-    joint2Servo.write(180);
-    Serial.println("Joint2 opened");
-  } else if (cmd == "joint2_close") {
-    joint2Servo.write(0);
-    Serial.println("Joint2 closed");
-  }
-
-  else if (cmd == "joint3_open") {
-    joint3Servo.write(180);
-    Serial.println("Joint3 opened");
-  } else if (cmd == "joint3_close") {
-    joint3Servo.write(0);
-    Serial.println("Joint3 closed");
-  }
-  delay(300);
 }
